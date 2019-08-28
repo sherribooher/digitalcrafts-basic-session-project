@@ -27,9 +27,22 @@ app.use(session({
 
 myStore.sync();
 
+// Middleware 
 app.use(bodyParser.urlencoded({
   extended: false
 }));
+
+// write app middleware to check if user session has user_id set: if it does, continue, otherwise
+// redirect to login page
+app.use(function (req, res, next) {
+  if (req.session.user_id !== undefined) {
+    next();
+  } else if (req.path === "/login") { // let user through if they are trying to get directly to the login page
+    next();
+  } else {
+    res.redirect("/login");
+  }
+});
 
 app.set('view engine', 'ejs');
 app.set('views', 'app/views')
@@ -105,11 +118,6 @@ app.post("/login", function (req, res, next) {
 });
 
 app.get("/welcome", function (req, res, next) {
-  // check to see if user is signed in/exists, if not, redirect
-  if (req.session.user_id === undefined) {
-    res.redirect("/login");
-    return;
-  }
   // grab user id from the session
   var user_id = req.session.user_id;
   // query the user model from db and use a callback to accept the user and set email and user_id
