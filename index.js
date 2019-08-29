@@ -32,20 +32,22 @@ app.use(bodyParser.urlencoded({
   extended: false
 }));
 
+app.set('view engine', 'ejs');
+app.set('views', 'app/views');
+
 // write app middleware to check if user session has user_id set: if it does, continue, otherwise
 // redirect to login page
 app.use(function (req, res, next) {
   if (req.session.user_id !== undefined) {
     next();
-  } else if (req.path === "/login") { // let user through if they are trying to get directly to the login page
+  } else if (req.path === "/login" || req.path) { // let user through if they are trying to get directly to the login page
+    next();
+  } else if (req.path === "/signup" || req.path) {
     next();
   } else {
     res.redirect("/login");
   }
 });
-
-app.set('view engine', 'ejs');
-app.set('views', 'app/views')
 
 app.get("/first", function (req, res, next) {
   var param = req.query.param;
@@ -71,6 +73,27 @@ app.get("/signOut", function (req, res, next) {
 
 app.get("/login", function (req, res, next) {
   res.render('login', { error_message: '' }); // use ejs "locals" (variables) for displaying any error messages
+});
+
+app.get("/", function (req, res, next) {
+  res.redirect("/welcome");
+});
+
+app.get("/welcome", function (req, res, next) {
+  // grab user id from the session
+  var user_id = req.session.user_id;
+  // query the user model from db and use a callback to accept the user and set email and user_id
+  db.user.findByPk(user_id).then(function (user) {
+    var email = user.email;
+
+    db.message.findAll({ include: [{ model: db.user }] }).then(function (messages) {
+      res.render('welcome', {
+        email: email,
+        user_id: user_id,
+        messages: messages
+      });
+    });
+  });
 });
 
 // use middleware body-parser for posting form info to db
@@ -117,17 +140,16 @@ app.post("/login", function (req, res, next) {
   })
 });
 
-app.get("/welcome", function (req, res, next) {
-  // grab user id from the session
+app.post("/messages", function (req, res, next) {
+  var subject = req.body.subject;
+  var message = req.body.message;
+  // create new message with user_id equal to the user's id
   var user_id = req.session.user_id;
-  // query the user model from db and use a callback to accept the user and set email and user_id
-  db.user.findByPk(user_id).then(function (user) {
-    var email = user.email;
-    res.render('welcome', {
-      email: email,
-      user_id: user_id
-    });
-  });
+  db.message.create({ subject: subject, message: message, user: user_id }).then(
+    function (message) {
+      res.redirect("/welcome");
+    }
+  )
 });
 
 app.listen(3000, function () {

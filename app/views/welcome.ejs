@@ -4,6 +4,36 @@
 <body>
   <h1>Welcome, <%= email %> id: <%= user_id %></h1>
   <a href="/signOut">Sign Out</a>
+
+  <form action="/messages" method="post">
+    <label for="subject">Subject: </label>
+    <input type="text" name="subject" />
+    <br />
+    <br />
+    <label for="message">Message: </label>
+    <textarea name="message" rows="4" columns="30" placeholder="255 character
+    limit" />
+    <br />
+    <br />
+    <button type="submit">Send Message</button>
+    </form>
+
+      <br />
+      <h1>Messages: </h1>
+      <br />
+      <% messages.forEach(function(message) { %>
+        <div>
+          <span><%= message.subject %></span>
+          <br />
+          <br />
+          <span><%= message.message %></span>
+          <br />
+          <br />
+          <span>By: <%= message.user.email %></span>
+        </div>
+        <br />
+        <br />
+      <% }) %>
 </body>
 
 </html>
